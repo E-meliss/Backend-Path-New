@@ -23,7 +23,7 @@ func NewServer(addr string, deps Deps) *http.Server {
 		middleware.Recover(deps.Log),
 		middleware.SecurityHeaders(),
 		middleware.CORS(middleware.CORSConfig{
-			AllowedOrigins: []string{"*"}, // prod’da daralt
+			AllowedOrigins: []string{"*"},
 			AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 			AllowedHeaders: []string{"Authorization", "Content-Type", "X-Request-Id"},
 		}),

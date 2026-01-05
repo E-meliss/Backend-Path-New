@@ -5,17 +5,14 @@ import (
 	"net/http"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	apphttp "github.com/E-meliss/wallet-service/internal/http"
 )
 
+// New wires the custom router + middleware stack from internal/http.
 func New(addr string, log *slog.Logger, pool *pgxpool.Pool) *http.Server {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte("ok"))
+	return apphttp.NewServer(addr, apphttp.Deps{
+		Log: log,
+		DB:  pool,
 	})
-
-	return &http.Server{
-		Addr:    addr,
-		Handler: mux,
-	}
 }

@@ -3,8 +3,8 @@ package http
 import (
 	nethttp "net/http"
 
-	"github.com/ezgicosar/wallet-service/internal/http/handlers"
-	"github.com/ezgicosar/wallet-service/internal/http/middleware"
+	"github.com/E-meliss/wallet-service/internal/http/handlers"
+	"github.com/E-meliss/wallet-service/internal/http/middleware"
 )
 
 type V1Routes struct {
