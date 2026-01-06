@@ -5,8 +5,6 @@ import (
 	"strings"
 )
 
-type Middleware func(http.Handler) http.Handler
-
 type route struct {
 	method  string
 	pattern string
@@ -15,14 +13,14 @@ type route struct {
 
 type Router struct {
 	routes     []route
-	middleware []Middleware
+	middleware []func(http.Handler) http.Handler
 }
 
 func NewRouter() *Router {
 	return &Router{}
 }
 
-func (r *Router) Use(mw ...Middleware) {
+func (r *Router) Use(mw ...func(http.Handler) http.Handler) {
 	r.middleware = append(r.middleware, mw...)
 }
 

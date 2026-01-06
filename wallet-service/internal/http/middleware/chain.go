@@ -1,5 +1,5 @@
 package middleware
 
-import apphttp "github.com/E-meliss/wallet-service/internal/http"
+import "net/http"
 
-type Middleware = apphttp.Middleware
+type Middleware func(http.Handler) http.Handler

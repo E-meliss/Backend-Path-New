@@ -10,45 +10,66 @@ type Config struct {
 	Env                  string
 	HTTPAddr             string
 	DatabaseURL          string
+	RedisAddr            string
 	LogLevel             string
 	JWTSecret            string
 	AccessTokenTTLMin    int
 	RefreshTokenTTLHours int
+
+	DefaultCurrency      string
+	DailyDebitLimitCents int64
 }
 
 func Load() Config {
 	cfg := Config{
 		Env:                  getEnv("APP_ENV", "dev"),
 		HTTPAddr:             getEnv("HTTP_ADDR", ":8080"),
-		DatabaseURL:          mustEnv("DATABASE_URL"),
+		DatabaseURL:          getEnv("DATABASE_URL", ""),
+		RedisAddr:            getEnv("REDIS_ADDR", ""),
 		LogLevel:             getEnv("LOG_LEVEL", "info"),
-		JWTSecret:            mustEnv("JWT_SECRET"),
-		AccessTokenTTLMin:    mustInt("ACCESS_TOKEN_TTL_MIN"),
-		RefreshTokenTTLHours: mustInt("REFRESH_TOKEN_TTL_HOURS"),
+		JWTSecret:            getEnv("JWT_SECRET", "change-me"),
+		AccessTokenTTLMin:    getEnvInt("ACCESS_TOKEN_TTL_MIN", 15),
+		RefreshTokenTTLHours: getEnvInt("REFRESH_TOKEN_TTL_HOURS", 24*7),
+
+		DefaultCurrency:      getEnv("DEFAULT_CURRENCY", "USD"),
+		DailyDebitLimitCents: getEnvInt64("DAILY_DEBIT_LIMIT_CENTS", 0), // 0 = disabled
 	}
+
+	if cfg.DatabaseURL == "" {
+		log.Println("WARNING: DATABASE_URL is empty")
+	}
+
 	return cfg
 }
 
-func getEnv(key, fallback string) string {
-	if v := os.Getenv(key); v != "" {
-		return v
-	}
-	return fallback
-}
-
-func mustEnv(key string) string {
+func getEnv(key, def string) string {
 	v := os.Getenv(key)
 	if v == "" {
-		log.Fatalf("missing required env: %s", key)
+		return def
 	}
 	return v
 }
 
-func mustInt(key string) int {
-	v := mustEnv(key)
-	n, err := strconv.Atoi(v)
-	if err != nil {
-		log.Fatalf("invalid int env %s=%s", key, v)
+func getEnvInt(key string, def int) int {
+	v := os.Getenv(key)
+	if v == "" {
+		return def
 	}
-	return n
+	i, err := strconv.Atoi(v)
+	if err != nil {
+		return def
+	}
+	return i
+}
+
+func getEnvInt64(key string, def int64) int64 {
+	v := os.Getenv(key)
+	if v == "" {
+		return def
+	}
+	i, err := strconv.ParseInt(v, 10, 64)
+	if err != nil {
+		return def
+	}
+	return i
 }

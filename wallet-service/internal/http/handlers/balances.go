@@ -1,18 +1,15 @@
 package handlers
 
 import (
-	"net/http"
-
-	apphttp "github.com/E-meliss/wallet-service/internal/http"
 	"github.com/E-meliss/wallet-service/internal/http/response"
+	"net/http"
 )
 
 type BalancesHandler struct {
-	deps apphttp.Deps
 }
 
-func NewBalancesHandler(deps apphttp.Deps) *BalancesHandler {
-	return &BalancesHandler{deps: deps}
+func NewBalancesHandler() *BalancesHandler {
+	return &BalancesHandler{}
 }
 
 func (h *BalancesHandler) Current(w http.ResponseWriter, r *http.Request) {

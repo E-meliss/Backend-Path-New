@@ -1,18 +1,15 @@
 package handlers
 
 import (
-	"net/http"
-
-	apphttp "github.com/E-meliss/wallet-service/internal/http"
 	"github.com/E-meliss/wallet-service/internal/http/response"
+	"net/http"
 )
 
 type AuthHandler struct {
-	deps apphttp.Deps
 }
 
-func NewAuthHandler(deps apphttp.Deps) *AuthHandler {
-	return &AuthHandler{deps: deps}
+func NewAuthHandler() *AuthHandler {
+	return &AuthHandler{}
 }
 
 type registerReq struct {

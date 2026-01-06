@@ -1,18 +1,15 @@
 package handlers
 
 import (
-	"net/http"
-
-	apphttp "github.com/E-meliss/wallet-service/internal/http"
 	"github.com/E-meliss/wallet-service/internal/http/response"
+	"net/http"
 )
 
 type TransactionsHandler struct {
-	deps apphttp.Deps
 }
 
-func NewTransactionsHandler(deps apphttp.Deps) *TransactionsHandler {
-	return &TransactionsHandler{deps: deps}
+func NewTransactionsHandler() *TransactionsHandler {
+	return &TransactionsHandler{}
 }
 
 func (h *TransactionsHandler) Credit(w http.ResponseWriter, r *http.Request) {

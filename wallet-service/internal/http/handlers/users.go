@@ -1,18 +1,15 @@
 package handlers
 
 import (
-	"net/http"
-
-	apphttp "github.com/E-meliss/wallet-service/internal/http"
 	"github.com/E-meliss/wallet-service/internal/http/response"
+	"net/http"
 )
 
 type UsersHandler struct {
-	deps apphttp.Deps
 }
 
-func NewUsersHandler(deps apphttp.Deps) *UsersHandler {
-	return &UsersHandler{deps: deps}
+func NewUsersHandler() *UsersHandler {
+	return &UsersHandler{}
 }
 
 func (h *UsersHandler) List(w http.ResponseWriter, r *http.Request) {

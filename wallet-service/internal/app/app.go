@@ -23,12 +23,18 @@ type App struct {
 func New(ctx context.Context, cfg config.Config) (*App, error) {
 	logg := logger.New(cfg.LogLevel)
 
-	pool, err := db.NewPool(ctx, cfg.DatabaseURL)
-	if err != nil {
-		return nil, err
+	var pool *pgxpool.Pool
+	if cfg.DatabaseURL == "" {
+		logg.Warn("DATABASE_URL is empty")
+	} else {
+		p, err := db.NewPool(ctx, cfg.DatabaseURL)
+		if err != nil {
+			return nil, err
+		}
+		pool = p
 	}
 
-	srv := httpserver.New(cfg.HTTPAddr, logg, pool)
+	srv := httpserver.New(cfg.HTTPAddr, cfg, logg)
 
 	return &App{
 		cfg:    cfg,

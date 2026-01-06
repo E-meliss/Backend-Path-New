@@ -2,20 +2,24 @@ package http
 
 import (
 	"log/slog"
-	"net/http"
+	nethttp "net/http"
 	"time"
 
-	"github.com/jackc/pgx/v5/pgxpool"
-
+	"github.com/E-meliss/wallet-service/internal/cache"
+	"github.com/E-meliss/wallet-service/internal/config"
+	"github.com/E-meliss/wallet-service/internal/eventstore"
+	"github.com/E-meliss/wallet-service/internal/http/handlers"
 	"github.com/E-meliss/wallet-service/internal/http/middleware"
 )
 
 type Deps struct {
-	Log *slog.Logger
-	DB  *pgxpool.Pool
+	Cfg   config.Config
+	Log   *slog.Logger
+	Cache cache.Cache
+	ES    eventstore.Store
 }
 
-func NewServer(addr string, deps Deps) *http.Server {
+func NewServer(addr string, deps Deps) *nethttp.Server {
 	r := NewRouter()
 
 	r.Use(
@@ -23,33 +27,47 @@ func NewServer(addr string, deps Deps) *http.Server {
 		middleware.Recover(deps.Log),
 		middleware.SecurityHeaders(),
 		middleware.CORS(middleware.CORSConfig{
-			AllowedOrigins: []string{"*"},
+			AllowedOrigins: []string{"*"}, // tighten for prod
 			AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 			AllowedHeaders: []string{"Authorization", "Content-Type", "X-Request-Id"},
 		}),
-		middleware.RateLimit(middleware.RateLimitConfig{
-			RPS:   10,
-			Burst: 20,
-		}),
+		middleware.RateLimit(middleware.RateLimitConfig{RPS: 10, Burst: 20}),
+		middleware.CircuitBreaker(middleware.CircuitBreakerConfig{FailureThreshold: 20, OpenFor: 10 * time.Second}),
 		middleware.Logging(deps.Log),
 		middleware.Metrics(),
 	)
 
-	r.Handle(http.MethodGet, "/health", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
+	r.Handle(nethttp.MethodGet, "/health", nethttp.HandlerFunc(func(w nethttp.ResponseWriter, r *nethttp.Request) {
+		w.WriteHeader(nethttp.StatusOK)
 		_, _ = w.Write([]byte("ok"))
 	}))
 
-	api := NewV1Routes(deps)
-	api.Register(r)
+	r.Handle(nethttp.MethodGet, "/metrics", middleware.MetricsHandler())
 
-	return &http.Server{
+	authMW := middleware.AuthStub()
+	requireRoleGen := func(role string) func(nethttp.Handler) nethttp.Handler { return middleware.RequireRole(role) }
+
+	authH := handlers.NewAuthHandler()
+	usersH := handlers.NewUsersHandler()
+	txH := handlers.NewTransactionsHandler()
+	balH := handlers.NewBalancesHandler()
+
+	api := NewV1Routes(deps)
+	api.Register(r,
+		authH,
+		usersH,
+		txH,
+		balH,
+		authMW,
+		requireRoleGen,
+	)
+
+	return &nethttp.Server{
 		Addr:              addr,
 		Handler:           r,
-		ReadTimeout:       10 * time.Second,
-		ReadHeaderTimeout: 5 * time.Second,
-		WriteTimeout:      15 * time.Second,
+		ReadHeaderTimeout: 10 * time.Second,
+		ReadTimeout:       20 * time.Second,
+		WriteTimeout:      20 * time.Second,
 		IdleTimeout:       60 * time.Second,
-		MaxHeaderBytes:    1 << 20,
 	}
 }
